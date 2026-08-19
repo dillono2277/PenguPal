@@ -4,23 +4,34 @@ import { Image, Modal, Pressable, StyleSheet, Text, View } from "react-native";
 import Timer from "./Timer";
 import BasicPopup from "./basicPopup";
 
-export default function index() {
+export default function Index() {
   // states
   const [timerSliderVisible, setTimerSliderVisible] = useState(false);
   const [timerRunning, setTimerRunning] = useState(false);
   const [time, setTime] = useState(0);
+  const [timerSeconds, setTimerSeconds] = useState(0);
   const [timeLeft, setTimeLeft] = useState(0);
   const [stopStudySessionPopUp, setStopStudySessionPopup] = useState(false);
+  const [timerIsPaused, setTimerIsPaused] = useState(false);
 
   // study button logic
 
   const handleStudySession = () => {
     setTimerSliderVisible(true);
   };
-  const handlePause = () => {};
+  const handlePause = () => {
+    setTimerRunning(false);
+    setTimerIsPaused(true);
+  };
+  const handleResumeStudySession = () => {
+    setTimerSeconds(timeLeft);
+    setTimerIsPaused(false);
+    setTimerRunning(true);
+  };
   const handleStopStudySession = () => {
     // stop the timer
     setTimerRunning(false);
+    setTimerIsPaused(false);
     // display a popup
     setStopStudySessionPopup(true);
     //display the data
@@ -67,7 +78,11 @@ export default function index() {
             <Pressable
               style={styles.confirmButton}
               onPress={() => {
+                const selectedSeconds = time * 60;
+                setTimerSeconds(selectedSeconds);
+                setTimeLeft(selectedSeconds);
                 setTimerSliderVisible(false);
+                setTimerIsPaused(false);
                 setTimerRunning(true);
               }}
             >
@@ -77,18 +92,22 @@ export default function index() {
         </View>
       </Modal>
       {/* Show timer based off of time state*/}
-      {timerRunning && !timerSliderVisible && (
-        <Timer time={time} onTimeLeftChange={setTimeLeft} />
+      {(timerRunning || timerIsPaused) && !timerSliderVisible && (
+        <Timer
+          time={timerSeconds}
+          isRunning={timerRunning}
+          onTimeLeftChange={setTimeLeft}
+        />
       )}
 
       {
-        /* Resume here */ timerRunning && !timerSliderVisible && (
+        timerRunning && !timerSliderVisible && (
           <Pressable style={styles.studyButton} onPress={handlePause}>
             <Text style={styles.buttonText}>Pause</Text>
           </Pressable>
         )
       }
-      {timerRunning && !timerSliderVisible && (
+      {(timerRunning || timerIsPaused) && !timerSliderVisible && (
         <Pressable style={styles.studyButton} onPress={handleStopStudySession}>
           <Text style={styles.buttonText}>Stop Study Session</Text>
         </Pressable>
@@ -97,13 +116,18 @@ export default function index() {
         <BasicPopup
           text={
             "You studied for " +
-            /* time studied:*/ Math.ceil(time - timeLeft) +
+            /* time studied:*/ Math.ceil((time * 60 - timeLeft) / 60) +
             " minutes!"
           }
           buttonText={"Close"}
           visible={stopStudySessionPopUp}
           onClose={() => setStopStudySessionPopup(false)}
         />
+      )}
+      {timerIsPaused && (
+        <Pressable style={styles.studyButton} onPress={handleResumeStudySession}>
+          <Text style={styles.buttonText}>Resume Study Session</Text>
+        </Pressable>
       )}
     </View>
   );

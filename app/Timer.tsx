@@ -2,30 +2,34 @@ import { useEffect, useState } from "react";
 import { StyleSheet, Text, View } from "react-native";
 
 interface TimerProps {
-  time: number; // time in minutes
-  onTimeLeftChange: (minutesLeft: number) => void;
+  time: number; // time in seconds
+  isRunning: boolean;
+  onTimeLeftChange: (secondsLeft: number) => void;
 }
 
-export default function Timer({ time, onTimeLeftChange }: TimerProps) {
-  const [secondsLeft, setSecondsLeft] = useState(time * 60);
+export default function Timer({ time, isRunning, onTimeLeftChange }: TimerProps) {
+  const [secondsLeft, setSecondsLeft] = useState(time);
 
   useEffect(() => {
-    setSecondsLeft(time * 60);
-  }, [time]);
+    setSecondsLeft(time);
+    onTimeLeftChange(time);
+  }, [time, onTimeLeftChange]);
 
   useEffect(() => {
-    onTimeLeftChange(Math.ceil(secondsLeft / 60));
-  }, [secondsLeft]);
-
-  useEffect(() => {
-    if (secondsLeft <= 0) return;
+    if (!isRunning) return;
 
     const interval = setInterval(() => {
-      setSecondsLeft((prev) => (prev > 0 ? prev - 1 : 0));
+      setSecondsLeft((previousSeconds) => {
+        if (previousSeconds <= 0) return previousSeconds;
+
+        const nextSeconds = Math.max(previousSeconds - 1, 0);
+        onTimeLeftChange(nextSeconds);
+        return nextSeconds;
+      });
     }, 1000);
 
     return () => clearInterval(interval);
-  }, [secondsLeft]);
+  }, [isRunning, onTimeLeftChange]);
 
   const hours = Math.floor(secondsLeft / 3600);
   const minutes = Math.floor((secondsLeft % 3600) / 60);
